@@ -118,7 +118,7 @@ class Monitoring(AukletLogging):
 
     def send(self, msg):
         self.broker.produce(
-            self.client.build_msgpack_send_data(msg, "send"), "send"
+            self.client.build_msgpack_send_data(msg), "send"
         )
 
     def log(self, msg, data_type, level="INFO"):
