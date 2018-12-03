@@ -259,6 +259,21 @@ class Client(object):
         }
         return log_dict
 
+    def build_send_data(self, msg):
+        send_dict = {
+            "payload": msg,
+            "application": self.app_id,
+            "publicIP": get_device_ip(),
+            "id": str(uuid4()),
+            "timestamp": int(round(time() * 1000)),
+            "macAddressHash": self.mac_hash,
+            "release": self.commit_hash,
+            "agentVersion": get_agent_version(),
+            "device": self.broker_username,
+            "version": self.version
+        }
+        return send_dict
+
     def build_msgpack_event_data(self, type, tb, tree):
         event_data = self.build_event_data(type, tb, tree)
         return msgpack.packb(event_data, use_bin_type=False)
@@ -266,3 +281,7 @@ class Client(object):
     def build_msgpack_log_data(self, msg, data_type, level):
         log_data = self.build_log_data(msg, data_type, level)
         return msgpack.packb(log_data, use_bin_type=False)
+
+    def build_msgpack_send_data(self, msg):
+        send_data = self.build_send_data(msg)
+        return msgpack.packb(send_data, use_bin_type=False)
