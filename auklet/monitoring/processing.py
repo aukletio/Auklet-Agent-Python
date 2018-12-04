@@ -259,7 +259,7 @@ class Client(object):
         }
         return log_dict
 
-    def build_send_data(self, msg):
+    def build_send_data(self, msg, data_type):
         send_dict = {
             "payload": msg,
             "application": self.app_id,
@@ -270,7 +270,8 @@ class Client(object):
             "release": self.commit_hash,
             "agentVersion": get_agent_version(),
             "device": self.broker_username,
-            "version": self.version
+            "version": self.version,
+            "type": data_type
         }
         return send_dict
 
@@ -282,6 +283,6 @@ class Client(object):
         log_data = self.build_log_data(msg, data_type, level)
         return msgpack.packb(log_data, use_bin_type=False)
 
-    def build_msgpack_send_data(self, msg):
-        send_data = self.build_send_data(msg)
+    def build_msgpack_send_data(self, msg, data_type):
+        send_data = self.build_send_data(msg, data_type)
         return msgpack.packb(send_data, use_bin_type=False)

@@ -116,9 +116,9 @@ class Monitoring(AukletLogging):
                 type, traceback, self.tree), "event")
         sys.__excepthook__(type, value, traceback)
 
-    def send(self, msg):
+    def send(self, msg, data_type="motion"):
         self.broker.produce(
-            self.client.build_msgpack_send_data(msg), "send"
+            self.client.build_msgpack_send_data(msg, data_type), "send"
         )
 
     def log(self, msg, data_type, level="INFO"):

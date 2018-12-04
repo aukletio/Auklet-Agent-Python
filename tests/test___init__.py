@@ -93,6 +93,12 @@ class TestMonitoring(unittest.TestCase):
             self.monitoring.log("", "")
             self.assertIsNotNone(test_log_data)
 
+    def test_send(self):
+        with patch('auklet.broker.MQTTClient.produce') as _produce:
+            _produce.side_effect = self.produce
+            self.monitoring.send({"latitude": 0.0, "longitude": 0.0},
+                                 data_type="location")
+
     def build_msgpack_tree(self, app_id):
         print(app_id)
 
@@ -103,6 +109,11 @@ class TestMonitoring(unittest.TestCase):
     def produce(data, data_type):
         global test_log_data
         test_log_data = data
+
+    @staticmethod
+    def send_produce(data, data_type):
+        global test_send_data
+        test_send_data = data
 
     @staticmethod
     def get_conf():

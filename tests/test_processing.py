@@ -199,6 +199,12 @@ class TestClient(unittest.TestCase):
                    new=self.mock_format_exc):
             self.assertBuildEventData(self.client.build_event_data)
 
+    def test_build_send_data(self):
+        self.assertIsNotNone(
+            self.client.build_send_data(
+                {"latitude": 0.0, "longitude": 0.0},
+                data_type="location"))
+
     def test_build_log_data(self):
         self.assertBuildLogData(
             self.client.build_log_data(
@@ -208,6 +214,13 @@ class TestClient(unittest.TestCase):
         with patch("auklet.monitoring.processing.traceback.format_exc",
                    new=self.mock_format_exc):
             self.assertBuildEventData(self.client.build_msgpack_event_data)
+
+    def test_build_msgpack_send_data(self):
+        self.assertIsNotNone(
+            self.client.build_msgpack_send_data(
+                {"latitude": 0.0, "longitude": 0.0},
+                data_type="location")
+        )
 
     def test_build_msgpack_log_data(self):
         self.assertBuildLogData(
