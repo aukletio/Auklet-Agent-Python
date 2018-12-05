@@ -86,6 +86,7 @@ jobs:
             - run:
                 name: Run benchmark tests
                 command: |
+                  pip3 install -U setuptools
                   export PYTHONUNBUFFERED=0
                   mkdir .auklet
                   sudo python3 setup.py install

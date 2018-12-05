@@ -23,7 +23,7 @@ git clone https://github.com/momo-lab/pyenv-install-latest.git "$(pyenv root)"/p
 # When another major or minor python version gets released or if a version
 # gets depreciated, add the version in the format major.minor (EX. 3.4)
 # or delete the version after depreciation to discontinue support and testing
-VERSIONLIST="3.7"
+VERSIONLIST="2.7 3.4 3.5 3.6 3.7"
 for VERSION in $VERSIONLIST
 do
     pyenv install-latest $VERSION
