@@ -71,11 +71,6 @@ jobs:
             - run:
                 name: Build Docker Application
                 command: |
-                  if [[ -f ~/.localCircleBuild ]]; then
-                    CIRCLE_LOCAL_BUILD=true
-                  else
-                    CIRCLE_LOCAL_BUILD=false
-                  fi
                   set -x
                   docker-compose build
 
