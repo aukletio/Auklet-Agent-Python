@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -e
-CIRCLE_LOCAL_BUILD=$1
+if [[ -f ~/.localCircleBuild ]]; then
+    CIRCLE_LOCAL_BUILD=true
+else
+    CIRCLE_LOCAL_BUILD=false
+fi
+
+echo $CIRCLE_LOCAL_BUILD
 
 #
 # This file exists because we should be able to run tests locally without needing
