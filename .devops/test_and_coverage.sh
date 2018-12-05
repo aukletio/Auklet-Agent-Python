@@ -11,31 +11,13 @@ CIRCLE_LOCAL_BUILD=$1
 # a test report was already posted for that commit. On line 19-30 we have
 # implemented a check to see if the test reporter throws this message.
 
-git clone https://github.com/pyenv/pyenv.git ~/.pyenv
-
-sudo pip install tox
-sudo pip install --upgrade setuptools
-
-PIL_BIN="$HOME/.pyenv/plugins/pyenv-install-latest/bin/pyenv-install-latest"
-curl https://raw.githubusercontent.com/momo-lab/pyenv-install-latest/master/bin/pyenv-install-latest --create-dirs -o $PIL_BIN
-chmod +x $PIL_BIN
-
-rm -Rf htmlcov
-
 if [[ "$CIRCLE_LOCAL_BUILD" == 'false' ]]; then
   curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
   chmod +x ./cc-test-reporter
   ./cc-test-reporter before-build
 fi
 
-tox
-
-sudo pip install coverage
-
-coverage combine
-coverage report -m
-coverage xml
-coverage html
+sh .devops/tests.sh
 
 if [[ "$CIRCLE_LOCAL_BUILD" == 'false' ]]; then
   CC_TEST_REPORTER_ID='1f241448ca8912db9dfe358e8d182fa2c736af8ba565d2954a3110583c4abd9c'
