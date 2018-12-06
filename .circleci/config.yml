@@ -90,7 +90,7 @@ jobs:
                   pip3 install -U setuptools
                   export PYTHONUNBUFFERED=0
                   mkdir .auklet
-                  sudo python3 setup.py install
+                  python3 setup.py install
                   python3 src/benchmark/run_tests.py
             - run:
                 name: Run Whitesource
