@@ -100,7 +100,7 @@ jobs:
                   else
                     CIRCLE_LOCAL_BUILD=false
                   fi
-                  bash .devops/test_and_coverage.sh CIRCLE_LOCAL_BUILD
+                  bash .devops/test_and_coverage.sh $CIRCLE_LOCAL_BUILD
             - store_artifacts:
                   path: ~/app/htmlcov
             - run:
