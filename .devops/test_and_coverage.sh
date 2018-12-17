@@ -1,11 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-if [[ -f ~/.localCircleBuild ]]; then
-  CIRCLE_LOCAL_BUILD=true
-else
-  CIRCLE_LOCAL_BUILD=false
-fi
+CIRCLE_LOCAL_BUILD=$1
 
 echo "Local build: $CIRCLE_LOCAL_BUILD"
 

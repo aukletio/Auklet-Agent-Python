@@ -50,12 +50,6 @@ jobs:
                   sed -i -e "s/__version__ = .*/__version__ = '$(cat ~/.version440)'/" auklet/__about__.py
                   VERSION_SIMPLE=$(cat ~/.version | xargs | cut -f1 -d"+")
                   sed -i -e "s/__semver__ = .*/__semver__ = '$VERSION_SIMPLE'/" auklet/__about__.py
-            - run:
-                name: Install Docker Compose
-                command: |
-                  curl -L https://github.com/docker/compose/releases/download/1.19.0/docker-compose-`uname -s`-`uname -m` > ~/docker-compose
-                  chmod +x ~/docker-compose
-                  sudo mv ~/docker-compose /usr/local/bin/docker-compose
 
             ##
             # RESTORE CACHES
@@ -70,38 +64,51 @@ jobs:
                   mkdir -p ~/.cache/pip ~/.whitesource-pip
 
             ##
-            # DOCKER
-            ##
-            - run:
-                name: Show Docker Versions
-                command: |
-                  set -x
-                  docker --version
-                  docker-compose --version
-            - setup_remote_docker
-            - run:
-                name: Build Docker Application
-                command: |
-                  set -x
-                  docker-compose build
-
-            ##
             # TESTS
             ##
             - run:
-                name: Run Tests
+                name: Install Python dependencies
                 command: |
-                  docker-compose run tests
+                  # https://github.com/pyenv/pyenv/wiki/Common-build-problems#requirements
+                  sudo apt-get -y install \
+                    make \
+                    build-essential \
+                    zlib1g-dev \
+                    libbz2-dev \
+                    libreadline-dev \
+                    libsqlite3-dev \
+                    wget \
+                    curl \
+                    llvm \
+                    libncurses5-dev \
+                    libncursesw5-dev \
+                    xz-utils \
+                    tk-dev \
+                    libffi-dev \
+                    liblzma-dev
+                  # We need to use OpenSSL 1.0.2 to support all 3.x variants,
+                  # and that version is only available in Jessie Backports.
+                  # We'll also upgrade OpenSSL, just for good measure.
+                  echo "deb http://ftp.debian.org/debian jessie-backports main" | sudo tee /etc/apt/sources.list.d/backports.list
+                  sudo apt-get update
+                  sudo apt-get -y -t jessie-backports install openssl libssl-dev
+            - run:
+                name: Run Unit Tests
+                command: |
+                  if [[ -f ~/.localCircleBuild ]]; then
+                    CIRCLE_LOCAL_BUILD=true
+                  else
+                    CIRCLE_LOCAL_BUILD=false
+                  fi
+                  bash .devops/test_and_coverage.sh CIRCLE_LOCAL_BUILD
             - store_artifacts:
                   path: ~/app/htmlcov
             - run:
-                name: Run benchmark tests
+                name: Run Benchmark Tests
                 command: |
-                  pyenv global 3.5.2
-                  pip3 install -U setuptools
                   export PYTHONUNBUFFERED=0
                   mkdir .auklet
-                  python3 setup.py install
+                  sudo python3 setup.py install
                   python3 src/benchmark/run_tests.py
             - run:
                 name: Run Whitesource
