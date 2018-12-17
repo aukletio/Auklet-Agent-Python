@@ -2,7 +2,7 @@
 set -e
 
 echo "Creating files..."
-mkdir -p .auklet
+mkdir -p .auklet htmlcov
 
 filelist="local.txt version communication usage limits"
 for file in $filelist
@@ -23,7 +23,7 @@ git clone https://github.com/momo-lab/pyenv-install-latest.git "$(pyenv root)"/p
 # When another major or minor python version gets released or if a version
 # gets depreciated, add the version in the format major.minor (EX. 3.4)
 # or delete the version after depreciation to discontinue support and testing
-VERSIONLIST="2.7 3.4 3.5 3.6 3.7"
+VERSIONLIST="2.7 3.7"
 for VERSION in $VERSIONLIST
 do
     pyenv install-latest $VERSION
@@ -48,6 +48,5 @@ sudo chown circleci:circleci htmlcov
 coverage html -d htmlcov
 coverage xml
 
-rm -Rf .auklet
-rm -f key.pem
-rm -f key.pem.zip
+rm -Rf .auklet .pyenv .cache
+rm -f cc-test-reporter key.pem key.pem.zip

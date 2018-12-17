@@ -1,14 +1,10 @@
 #!/usr/bin/env bash
 set -e
-if [[ -f ~/.localCircleBuild ]]; then
-    CIRCLE_LOCAL_BUILD=true
-else
-    CIRCLE_LOCAL_BUILD=false
-fi
 
-echo $CIRCLE_LOCAL_BUILD
+CIRCLE_LOCAL_BUILD=
 
-#
+echo "Local build: $CIRCLE_LOCAL_BUILD"
+
 # This file exists because we should be able to run tests locally without needing
 # to download the code climate validation package. To do this we need
 # code climate to be in a different file than the test execution.
