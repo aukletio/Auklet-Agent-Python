@@ -6,5 +6,5 @@ services:
       context: .
       dockerfile: ./compose/tests/Dockerfile
     volumes:
-      - .:/home/circleci
+      - ./htmlcov:/home/circleci/htmlcov
     command: bash .devops/test_and_coverage.sh

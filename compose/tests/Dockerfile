@@ -27,3 +27,7 @@ RUN \
 RUN sudo chown -R circleci /home/circleci
 
 WORKDIR /home/circleci
+
+COPY . /home/circleci
+
+RUN sudo chown -R circleci .
