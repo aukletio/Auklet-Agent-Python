@@ -24,7 +24,6 @@ git clone https://github.com/momo-lab/pyenv-install-latest.git "$(pyenv root)"/p
 # gets depreciated, add the version in the format major.minor (EX. 3.4)
 # or delete the version after depreciation to discontinue support and testing
 
-sleep 100000
 VERSIONLIST="2.7 3.4 3.5 3.6 3.7"
 for VERSION in $VERSIONLIST
 do
