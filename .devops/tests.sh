@@ -49,6 +49,3 @@ coverage report -m
 sudo chown circleci:circleci htmlcov
 coverage html -d htmlcov
 coverage xml
-
-rm -Rf .auklet .pyenv .cache
-rm -f cc-test-reporter key.pem key.pem.zip
