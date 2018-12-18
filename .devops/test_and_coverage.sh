@@ -10,7 +10,7 @@ echo "Local build: $CIRCLE_LOCAL_BUILD"
 # code climate to be in a different file than the test execution.
 #
 # The test reporter will throw a HTTP 409 error if we rebuild in circle because
-# a test report was already posted for that commit. On line 19-30 we have
+# a test report was already posted for that commit. On line 33-35 we have
 # implemented a check to see if the test reporter throws this message.
 
 if [[ "$CIRCLE_LOCAL_BUILD" == 'false' ]]; then
