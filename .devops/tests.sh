@@ -39,12 +39,23 @@ do
     pip install -r tests.txt
 
     python setup.py install
-
+    # set -e is enabled because if any test from any version is to fail,
+    # it will cause CircleCI's check to fail
+    set -e
     COVERAGE_FILE=.coverage.python$pyver coverage run --rcfile=".coveragerc" setup.py test
 done
 
 coverage combine
 coverage report -m
+
+# Since we are required to follow ASIL-B compliance, this check is intended
+# to see if our unit tests result in 100% coverage.  If not, it will cause the
+# testing platform to fail resulting in CircleCI's check to fail.
+TOTAL=$(coverage report -m | grep 'TOTAL' | awk '{print $4}')
+if [ "$TOTAL" != '100%' ]; then
+    echo "Coverage results are required to be at 100%."
+    exit 1
+fi
 coverage html -d htmlcov
 coverage xml
 
