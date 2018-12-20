@@ -6,7 +6,7 @@ from auklet.stats import SystemMetrics
 from auklet.utils import (create_file, get_abs_path, open_auklet_url,
                           build_url, post_auklet_url, u)
 from auklet.monitoring.utils import (load_limits, check_data_limits,
-                                     update_data_limits, build_send_data,
+                                     build_send_data,
                                      build_log_data, build_event_data)
 
 try:
