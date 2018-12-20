@@ -15,7 +15,7 @@ def without_auklet():
     base.start(state="WithoutAuklet")
 
 
-@patch('auklet.monitoring.processing.Client.update_limits')
+@patch('auklet.monitoring.utils.update_data_limits')
 @patch('auklet.broker.MQTTClient._get_certs')
 def with_auklet_and_mqtt(get_certs_mock, update_limits_mock):
     """
