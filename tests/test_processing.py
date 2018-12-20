@@ -120,7 +120,7 @@ class TestClient(unittest.TestCase):
 
         self.base_patch_side_effect_with_none(
             'auklet.monitoring.processing.open',
-            IOError, load_limits, self.client)
+            IOError, (load_limits, self.client))
 
     def test_build_usage_json(self):
         data = self.client._build_usage_json()
@@ -224,14 +224,15 @@ class TestClient(unittest.TestCase):
                   "locals":
                     {"key": "value"}}]}
 
-    def base_patch_side_effect_with_none(self, location, side_effect, actual,
-                                         arg=None):
+    def base_patch_side_effect_with_none(self, location, side_effect,
+                                         func_info):
+        func, arg = func_info
         with patch(location) as _base:
             _base.side_effect = side_effect
             if arg is not None:
-                self.assertIsNone(actual(arg))
+                self.assertIsNone(func(arg))
             else:
-                self.assertIsNone(actual())
+                self.assertIsNone(func())
 
     def build_load_limits_test(self, expected, actual):
         self.assertEqual(expected, actual)
