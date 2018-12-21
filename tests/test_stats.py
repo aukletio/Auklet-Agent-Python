@@ -297,10 +297,14 @@ class TestSystemMetrics(unittest.TestCase):
             self.assertIs(psutil.POWER_TIME_UNKNOWN,
                           self.system_metrics.battery_seconds_left)
 
-        with patch('auklet.stats.psutil.sensors_temperatures') \
-                as _sensors_temperature:
-            _sensors_temperature.side_effect = AttributeError
-            self.system_metrics.__init__()
+        # Unable to patch a module that does not exist on certain platforms
+        try:
+            with patch('auklet.stats.psutil.sensors_temperatures') \
+                    as _sensors_temperature:
+                _sensors_temperature.side_effect = AttributeError
+                self.system_metrics.__init__()
+        except AttributeError:
+            pass
 
     def test___iter__(self):
         for value in self.system_metrics.__iter__():
