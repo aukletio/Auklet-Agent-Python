@@ -272,5 +272,53 @@ class TestMonitoringTree(unittest.TestCase):
         children = [NewChild]
 
 
+class TestSystemMetrics(unittest.TestCase):
+    def setUp(self):
+        self.system_metrics = SystemMetrics()
+
+    @patch('auklet.stats.psutil.sensors_battery')
+    @patch('auklet.stats.psutil.virtual_memory')
+    @patch('auklet.stats.psutil.cpu_percent')
+    def test___init__(self, _cpu_percent, _virtual_memory, _sensors_battery):
+        _cpu_percent.return_value = 1.0
+        _virtual_memory.side_effect = self.VirtualMemory
+        _sensors_battery.side_effect = self.SensorsBattery
+        self.system_metrics.__init__()
+
+        self.assertIsNotNone(self.system_metrics.cpu_usage)
+        self.assertIsNotNone(self.system_metrics.mem_usage)
+        self.assertIsNotNone(self.system_metrics.current_battery_percent)
+        self.assertIsNotNone(self.system_metrics.power_plugged_in)
+        self.assertIsNotNone(self.system_metrics.battery_seconds_left)
+
+        with patch('auklet.stats.psutil.sensors_battery') as _sensors_battery:
+            _sensors_battery.return_value = self.SensorsBatteryUnknown
+            self.system_metrics.__init__()
+            self.assertIs(psutil.POWER_TIME_UNKNOWN,
+                          self.system_metrics.battery_seconds_left)
+
+        with patch('auklet.stats.psutil.sensors_temperatures') \
+                as _sensors_temperature:
+            _sensors_temperature.side_effect = AttributeError
+            self.system_metrics.__init__()
+
+    def test___iter__(self):
+        for value in self.system_metrics.__iter__():
+            self.assertIsNotNone(value)
+
+    class VirtualMemory:
+        percent = 1.0
+
+    class SensorsBattery:
+        percent = 1.0
+        power_plugged = True
+        secsleft = 1
+
+    class SensorsBatteryUnknown:
+        percent = 1.0
+        power_plugged = True
+        secsleft = psutil.POWER_TIME_UNKNOWN
+
+
 if __name__ == '__main__':
     unittest.main()
