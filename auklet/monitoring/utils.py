@@ -17,18 +17,13 @@ def load_limits(client):
             if limits_str:
                 data = json.loads(limits_str)
                 client.data_day = data['data']['normalized_cell_plan_date']
-                temp_limit = data['data']['cellular_data_limit']
-                if temp_limit is not None:
-                    client.data_limit = data['data'][
-                                          'cellular_data_limit'] * MB_TO_B
-                else:
-                    client.data_limit = temp_limit
-                temp_offline = data['storage']['storage_limit']
-                if temp_offline is not None:
-                    client.offline_limit = data['storage'][
-                                             'storage_limit'] * MB_TO_B
-                else:
-                    client.offline_limit = data['storage']['storage_limit']
+                client.data_limit = data['data']['cellular_data_limit']
+                if client.data_limit is not None:
+                    client.data_limit *= MB_TO_B
+
+                client.offline_limit = data['storage']['storage_limit']
+                if client.offline_limit is not None:
+                    client.offline_limit *= MB_TO_B
     except IOError:
         return
 
@@ -57,24 +52,17 @@ def update_data_limits(client):
     with open(client.limits_filename, 'w+') as limits:
         limits.truncate()
         limits.write(json.dumps(config))
-    new_day = config['data']['normalized_cell_plan_date']
-    temp_limit = config['data']['cellular_data_limit']
-    if temp_limit is not None:
-        new_data = config['data']['cellular_data_limit'] * MB_TO_B
-    else:
-        new_data = temp_limit
-    temp_offline = config['storage']['storage_limit']
-    if temp_offline is not None:
-        new_offline = config['storage']['storage_limit'] * MB_TO_B
-    else:
-        new_offline = config['storage']['storage_limit']
-    if client.data_day != new_day:
-        client.data_day = new_day
+    client.data_limit = config['data']['cellular_data_limit']
+    if client.data_limit is not None:
+        client.data_limit *= MB_TO_B
+
+    client.offline_limit = config['storage']['storage_limit']
+    if client.offline_limit is not None:
+        client.offline_limit *= MB_TO_B
+
+    if client.data_day != config['data']['normalized_cell_plan_date']:
+        client.data_day = config['data']['normalized_cell_plan_date']
         client.data_current = 0
-    if client.data_limit != new_data:
-        client.data_limit = new_data
-    if client.offline_limit != new_offline:
-        client.offline_limit = new_offline
     # return emission period in ms
     return config['emission_period'] * S_TO_MS
 
