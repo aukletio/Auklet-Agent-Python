@@ -16,9 +16,9 @@ echo 'Deploying to PyPI...'
 # twine is also required.
 cp LICENSE auklet/licenses/auklet
 sudo pip install -U setuptools twine wheel
-python setup.py sdist bdist_wheel
+sudo python setup.py sdist bdist_wheel
 if [[ "$TWINE_REPOSITORY_URL" != "" ]]; then
-  twine upload --repository-url $TWINE_REPOSITORY_URL dist/*
+  sudo twine upload --repository-url $TWINE_REPOSITORY_URL dist/*
 else
-  twine upload dist/*
+  sudo twine upload dist/*
 fi
