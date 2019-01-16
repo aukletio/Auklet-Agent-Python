@@ -11,6 +11,7 @@ from tests import data_factory
 from auklet.utils import b
 from auklet.stats import MonitoringTree
 from auklet.monitoring.processing import Client
+from auklet.monitoring.utils import update_data_limits, load_limits
 
 try:
     # For Python 3.0 and later
@@ -105,13 +106,13 @@ class TestClient(unittest.TestCase):
 
         data = data_factory.LimitsGenerator(cellular_data_limit=10)
         self.write_load_limits_test(data)
-        self.client._load_limits()
+        load_limits(self.client)
         self.build_load_limits_test(10000000.0, self.client.data_limit)
 
         data = data_factory.LimitsGenerator(
             cellular_data_limit="null", storage_limit=10)
         self.write_load_limits_test(data)
-        self.client._load_limits()
+        load_limits(self.client)
         self.build_load_limits_test(10000000.0, self.client.offline_limit)
 
         with open(self.client.limits_filename, "w") as limits:
@@ -119,7 +120,7 @@ class TestClient(unittest.TestCase):
 
         self.base_patch_side_effect_with_none(
             'auklet.monitoring.processing.open',
-            IOError, self.client._load_limits)
+            IOError, (load_limits, self.client))
 
     def test_build_usage_json(self):
         data = self.client._build_usage_json()
@@ -174,40 +175,37 @@ class TestClient(unittest.TestCase):
         with patch(
                 'auklet.monitoring.processing.Client._get_config',
                 new=self._get_config):
-            self.assertEqual(self.client.update_limits(), 60000)
+            self.assertEqual(update_data_limits(self.client), 60000)
             self.none = False
 
             self.cellular_data_limit = 1000
-            self.client.update_limits()
+            update_data_limits(self.client)
             self.assertEqual(self.client.data_limit, 1000000000.0)
             self.cellular_data_limit = None
 
             self.storage_limit = 1000
-            self.client.update_limits()
+            update_data_limits(self.client)
             self.assertEqual(self.client.offline_limit, 1000000000.0)
             self.storage_limit = None
 
             self.cell_plan_date = 10
-            self.client.update_limits()
+            update_data_limits(self.client)
             self.assertEqual(self.client.data_day, 10)
             self.cell_plan_date = 1
 
-            self.assertEqual(self.client.update_limits(), 60000)
-
-    def test_build_event_data(self):
-        with patch("auklet.monitoring.processing.traceback.format_exc",
-                   new=self.mock_format_exc):
-            self.assertBuildEventData(self.client.build_event_data)
-
-    def test_build_log_data(self):
-        self.assertBuildLogData(
-            self.client.build_log_data(
-                msg='msg', data_type='data_type', level='level'))
+            self.assertEqual(update_data_limits(self.client), 60000)
 
     def test_build_msgpack_event_data(self):
-        with patch("auklet.monitoring.processing.traceback.format_exc",
+        with patch("auklet.monitoring.utils.traceback.format_exc",
                    new=self.mock_format_exc):
             self.assertBuildEventData(self.client.build_msgpack_event_data)
+
+    def test_build_msgpack_send_data(self):
+        self.assertIsNotNone(
+            self.client.build_msgpack_send_data(
+                {"latitude": 0.0, "longitude": 0.0},
+                data_type="location")
+        )
 
     def test_build_msgpack_log_data(self):
         self.assertBuildLogData(
@@ -226,10 +224,15 @@ class TestClient(unittest.TestCase):
                   "locals":
                     {"key": "value"}}]}
 
-    def base_patch_side_effect_with_none(self, location, side_effect, actual):
+    def base_patch_side_effect_with_none(self, location, side_effect,
+                                         func_info):
+        func, arg = func_info
         with patch(location) as _base:
             _base.side_effect = side_effect
-            self.assertIsNone(actual())
+            if arg is not None:
+                self.assertIsNone(func(arg))
+            else:
+                self.assertIsNone(func())
 
     def build_load_limits_test(self, expected, actual):
         self.assertEqual(expected, actual)
@@ -257,7 +260,7 @@ class TestClient(unittest.TestCase):
             return Traceback
 
         with patch(
-                'auklet.monitoring.processing.Event', new=self.get_mock_event):
+                'auklet.monitoring.utils.Event', new=self.get_mock_event):
             self.monitoring_tree.cached_filenames["file_name"] = "file_name"
             self.assertNotEqual(
                 function(
@@ -295,7 +298,6 @@ class TestClient(unittest.TestCase):
     class MockResult(object):
         def read(self):
             return b(json.dumps({"test": "object"}))
-
 
 
 if __name__ == '__main__':
