@@ -39,9 +39,7 @@ do
     pip install -r tests.txt
 
     python setup.py install
-    # set -e is enabled because if any test from any version is to fail,
-    # it will cause CircleCI's check to fail
-    set -e
+
     COVERAGE_FILE=.coverage.python$pyver coverage run --rcfile=".coveragerc" setup.py test
 done
 
