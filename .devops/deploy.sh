@@ -18,7 +18,7 @@ cp LICENSE auklet/licenses/auklet
 sudo pip install -U setuptools twine wheel
 sudo python setup.py sdist bdist_wheel
 if [[ "$TWINE_REPOSITORY_URL" != "" ]]; then
-  sudo twine upload --repository-url $TWINE_REPOSITORY_URL dist/*
+  twine upload --repository-url $TWINE_REPOSITORY_URL dist/*
 else
-  sudo twine upload dist/*
+  twine upload dist/*
 fi
