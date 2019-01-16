@@ -1,14 +1,13 @@
 import json
 import msgpack
-import traceback
 
-from time import time
-from uuid import uuid4
 from datetime import datetime
-from auklet.stats import Event, SystemMetrics
-from auklet.utils import create_file, \
-    get_abs_path, get_device_ip, open_auklet_url, build_url, \
-    get_agent_version, post_auklet_url, u
+from auklet.stats import SystemMetrics
+from auklet.utils import (create_file, get_abs_path, open_auklet_url,
+                          build_url, post_auklet_url, u)
+from auklet.monitoring.utils import (load_limits, check_data_limits,
+                                     build_send_data,
+                                     build_log_data, build_event_data)
 
 try:
     # For Python 3.0 and later
@@ -61,7 +60,7 @@ class Client(object):
         self.version = version
         self.auklet_dir = auklet_dir
         self._set_filenames()
-        self._load_limits()
+        load_limits(self)
         create_file(self.offline_filename)
         create_file(self.limits_filename)
         create_file(self.usage_filename)
@@ -141,28 +140,6 @@ class Client(object):
         if res is not None:
             return json.loads(u(res.read()))['config']
 
-    def _load_limits(self):
-        try:
-            with open(self.limits_filename, "r") as limits:
-                limits_str = limits.read()
-                if limits_str:
-                    data = json.loads(limits_str)
-                    self.data_day = data['data']['normalized_cell_plan_date']
-                    temp_limit = data['data']['cellular_data_limit']
-                    if temp_limit is not None:
-                        self.data_limit = data['data'][
-                                              'cellular_data_limit'] * MB_TO_B
-                    else:
-                        self.data_limit = temp_limit
-                    temp_offline = data['storage']['storage_limit']
-                    if temp_offline is not None:
-                        self.offline_limit = data['storage'][
-                                                 'storage_limit'] * MB_TO_B
-                    else:
-                        self.offline_limit = data['storage']['storage_limit']
-        except IOError:
-            return
-
     def _build_usage_json(self):
         return {"data": self.data_current, "offline": self.offline_current}
 
@@ -174,20 +151,7 @@ class Client(object):
             return False
 
     def check_data_limit(self, data, current_use, offline=False):
-        if self.offline_limit is None and offline:
-            return True
-        if self.data_limit is None and not offline:
-            return True
-        data_size = len(data)
-        temp_current = current_use + data_size
-        if temp_current >= self.data_limit:
-            return False
-        if offline:
-            self.offline_current = temp_current
-        else:
-            self.data_current = temp_current
-        self._update_usage_file()
-        return True
+        return check_data_limits(self, data, current_use, offline)
 
     def check_date(self):
         if datetime.today().day == self.data_day:
@@ -197,72 +161,14 @@ class Client(object):
         else:
             self.reset_data = True
 
-    def update_limits(self):
-        config = self._get_config()
-        if config is None:
-            return 60000
-        with open(self.limits_filename, 'w+') as limits:
-            limits.truncate()
-            limits.write(json.dumps(config))
-        new_day = config['data']['normalized_cell_plan_date']
-        temp_limit = config['data']['cellular_data_limit']
-        if temp_limit is not None:
-            new_data = config['data']['cellular_data_limit'] * MB_TO_B
-        else:
-            new_data = temp_limit
-        temp_offline = config['storage']['storage_limit']
-        if temp_offline is not None:
-            new_offline = config['storage']['storage_limit'] * MB_TO_B
-        else:
-            new_offline = config['storage']['storage_limit']
-        if self.data_day != new_day:
-            self.data_day = new_day
-            self.data_current = 0
-        if self.data_limit != new_data:
-            self.data_limit = new_data
-        if self.offline_limit != new_offline:
-            self.offline_limit = new_offline
-        # return emission period in ms
-        return config['emission_period'] * S_TO_MS
-
-    def build_event_data(self, type, tb, tree):
-        event = Event(type, tb, tree, self.abs_path)
-        event_dict = dict(event)
-        event_dict['application'] = self.app_id
-        event_dict['publicIP'] = get_device_ip()
-        event_dict['id'] = str(uuid4())
-        event_dict['timestamp'] = int(round(time() * 1000))
-        event_dict['systemMetrics'] = dict(self.system_metrics)
-        event_dict['macAddressHash'] = self.mac_hash
-        event_dict['release'] = self.commit_hash
-        event_dict['agentVersion'] = get_agent_version()
-        event_dict['device'] = self.broker_username
-        event_dict['absPath'] = self.abs_path
-        event_dict['version'] = self.version
-        return event_dict
-
-    def build_log_data(self, msg, data_type, level):
-        log_dict = {
-            "message": msg,
-            "type": data_type,
-            "level": level,
-            "application": self.app_id,
-            "publicIP": get_device_ip(),
-            "id": str(uuid4()),
-            "timestamp": int(round(time() * 1000)),
-            "systemMetrics": dict(self.system_metrics),
-            "macAddressHash": self.mac_hash,
-            "release": self.commit_hash,
-            "agentVersion": get_agent_version(),
-            "device": self.broker_username,
-            "version": self.version
-        }
-        return log_dict
-
     def build_msgpack_event_data(self, type, tb, tree):
-        event_data = self.build_event_data(type, tb, tree)
-        return msgpack.packb(event_data, use_bin_type=False)
+        return msgpack.packb(build_event_data(self, type, tb, tree),
+                             use_bin_type=False)
 
     def build_msgpack_log_data(self, msg, data_type, level):
-        log_data = self.build_log_data(msg, data_type, level)
-        return msgpack.packb(log_data, use_bin_type=False)
+        return msgpack.packb(build_log_data(self, msg, data_type, level),
+                             use_bin_type=False)
+
+    def build_msgpack_send_data(self, msg, data_type):
+        return msgpack.packb(build_send_data(self, msg, data_type),
+                             use_bin_type=False)
