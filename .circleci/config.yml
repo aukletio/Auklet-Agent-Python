@@ -90,8 +90,9 @@ jobs:
                   # and that version is only available in Jessie Backports.
                   # We'll also upgrade OpenSSL, just for good measure.
                   echo 'deb [check-valid-until=no] http://archive.debian.org/debian jessie-backports main' | sudo tee /etc/apt/sources.list.d/backports.list
-                  sudo apt-get update
-                  sudo apt-get -y -t jessie-backports install openssl libssl-dev
+                  apt-get update && apt-get -t jessie-backports install -y
+                    openssl
+                    libssl-dev
             - run:
                 name: Run Unit Tests
                 command: |
