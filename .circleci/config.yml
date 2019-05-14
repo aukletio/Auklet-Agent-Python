@@ -89,9 +89,9 @@ jobs:
                   # We need to use OpenSSL 1.0.2 to support all 3.x variants,
                   # and that version is only available in Jessie Backports.
                   # We'll also upgrade OpenSSL, just for good measure.
-                  echo 'deb [check-valid-until=no] http://archive.debian.org/debian jessie-backports main' | sudo tee /etc/apt/sources.list.d/backports.list
-                  apt-get -o Acquire::Check-Valid-Until=false update
-                  apt-get update && apt-get -t jessie-backports install -y
+                  sudo echo 'deb [check-valid-until=no] http://archive.debian.org/debian jessie-backports main' | sudo tee /etc/apt/sources.list.d/backports.list
+                  sudo apt-get -o Acquire::Check-Valid-Until=false update
+                  sudo apt-get update && apt-get -t jessie-backports install -y
                     openssl
                     libssl-dev
             - run:
