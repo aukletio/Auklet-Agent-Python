@@ -105,7 +105,7 @@ def build_log_data(client, msg, data_type, level):
 
 def build_send_data(client, msg, data_type):
     send_dict = {
-        "payload": msg,
+        "payload": {"value": msg},
         "application": client.app_id,
         "publicIP": get_device_ip(),
         "id": str(uuid4()),

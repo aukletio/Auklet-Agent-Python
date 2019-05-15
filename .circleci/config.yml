@@ -69,6 +69,17 @@ jobs:
             - run:
                 name: Install Python dependencies
                 command: |
+                  # We need to update sources.list/apt.conf
+                  # because some Jessie repos have been moved
+                  # and/or archived. See https://unix.stackexchange.com/a/508728.
+                  echo 'deb http://cdn-fastly.deb.debian.org/debian/ jessie main
+                  deb-src http://cdn-fastly.deb.debian.org/debian/ jessie main
+                  deb http://security.debian.org/ jessie/updates main
+                  deb-src http://security.debian.org/ jessie/updates main
+                  deb [check-valid-until=no] http://archive.debian.org/debian jessie-backports main
+                  deb-src [check-valid-until=no] http://archive.debian.org/debian jessie-backports main' | sudo tee /etc/apt/sources.list
+                  echo 'Acquire::Check-Valid-Until "false";' | sudo tee /etc/apt/apt.conf
+                  sudo apt-get update
                   # https://github.com/pyenv/pyenv/wiki/Common-build-problems#requirements
                   sudo apt-get -y install \
                     make \
@@ -89,9 +100,7 @@ jobs:
                   # We need to use OpenSSL 1.0.2 to support all 3.x variants,
                   # and that version is only available in Jessie Backports.
                   # We'll also upgrade OpenSSL, just for good measure.
-                  echo "deb http://ftp.debian.org/debian jessie-backports main" | sudo tee /etc/apt/sources.list.d/backports.list
-                  sudo apt-get update
-                  sudo apt-get -y -t jessie-backports install openssl libssl-dev
+                  sudo apt-get -t jessie-backports install -y openssl libssl-dev
             - run:
                 name: Run Unit Tests
                 command: |
