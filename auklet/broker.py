@@ -6,6 +6,9 @@ import json
 import logging
 import paho.mqtt.client as mqtt
 
+from pubnub.pubnub import PubNub
+from pubnub.pnconfiguration import PNConfiguration
+
 from auklet.utils import build_url, create_file, open_auklet_url, u
 
 try:
@@ -23,15 +26,14 @@ class MQTTClient(object):
     producer = None
     brokers = None
     client = None
-    username = None
-    password = None
     com_config_filename = ".auklet/communication"
-    port = None
     producer_types = {
         "monitoring": "python/profiler/{}/{}",
         "event": "python/events/{}/{}",
         "send": "datapoints/{}/{}"
     }
+    pubnub = None
+    publish_key = None
 
     def __init__(self, client):
         self.client = client
@@ -90,24 +92,11 @@ class MQTTClient(object):
 
     def create_producer(self):
         if self._get_certs():
-            self.producer = mqtt.Client(client_id=self.client.client_id,
-                                        protocol=mqtt.MQTTv311,
-                                        transport="ssl",
-                                        clean_session=False)
-            self.producer.username_pw_set(
-                username=self.client.broker_username,
-                password=self.client.broker_password)
-            self.producer.enable_logger()
-            context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
-            context.verify_mode = ssl.CERT_REQUIRED
-            context.load_verify_locations(
-                capath="{}/".format(self.client.auklet_dir))
-            context.options &= ~ssl.OP_NO_SSLv3
-            self.producer.tls_set_context(context)
-            self.producer.on_disconnect = self.on_disconnect
-            self.producer.connect_async(self.brokers, self.port)
-            self.producer.loop_start()
+            pnconfig = PNConfiguration()
+            pnconfig.publish_key = self.publish_key
+            pnconfig.uuid = self.client.org_id
+            self.producer = PubNub(pnconfig)
 
     def produce(self, data, data_type="monitoring"):
-        self.producer.publish(
-            self.producer_types[data_type], payload=data, qos=1)
+        self.producer.publish().channel(
+            self.producer_types[data_type]).message(data)
