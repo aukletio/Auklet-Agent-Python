@@ -112,9 +112,11 @@ class Monitoring(AukletLogging):
             self.client.check_date()
 
     def handle_exc(self, type, value, traceback):
+        test = self.client.build_msgpack_event_data(
+                type, traceback, self.tree)
+        print(test)
         self.broker.produce(
-            self.client.build_msgpack_event_data(
-                type, traceback, self.tree), "event")
+            test, "event")
         sys.__excepthook__(type, value, traceback)
 
     def send(self, msg, data_type="motion"):
