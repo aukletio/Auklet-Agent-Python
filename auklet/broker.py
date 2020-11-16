@@ -114,8 +114,6 @@ class MQTTClient(object):
                 data
             )
         elif data_type == "event":
-            print("publishing {} to {}".format(data,
-                                               self.producer_types[data_type]))
             self.producer.publish().channel(
                 self.producer_types[data_type]).message(data).sync()
         return True
