@@ -114,7 +114,6 @@ class Monitoring(AukletLogging):
     def handle_exc(self, type, value, traceback):
         test = self.client.build_msgpack_event_data(
                 type, traceback, self.tree)
-        print(test)
         self.broker.produce(
             test, "event")
         sys.__excepthook__(type, value, traceback)
