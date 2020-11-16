@@ -108,21 +108,14 @@ class MQTTClient(object):
             return post_auklet_url(
                 build_url(
                     self.client.base_url,
-                    "private/metrics/store/"
+                    "private/sampledstacktraces/store/"
                 ),
                 self.client.apikey,
                 data
             )
         elif data_type == "event":
-            return post_auklet_url(
-                build_url(
-                    self.client.base_url,
-                    "private/events/store/"
-                ),
-                self.client.apikey,
-                data
-            )
-        print("publishing {} to {}".format(data, self.producer_types[data_type]))
-        # self.producer.publish(self.producer_types[data_type], data)
-        self.producer.publish().channel(
-            self.producer_types[data_type]).message(data).sync()
+            print("publishing {} to {}".format(data,
+                                               self.producer_types[data_type]))
+            self.producer.publish().channel(
+                self.producer_types[data_type]).message(data).sync()
+        return True
