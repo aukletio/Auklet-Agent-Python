@@ -30,6 +30,7 @@ class MQTTClient(object):
     producer_types = {
         "monitoring": "python/profiler/{}/{}",
         "event": "python/events/{}/{}",
+        "send": "datapoints/{}/{}"
     }
 
     def __init__(self, client):
@@ -41,6 +42,7 @@ class MQTTClient(object):
         self.producer_types = {
             "monitoring": "python/profiler/{}".format(topic_suffix),
             "event": "python/events/{}".format(topic_suffix),
+            "send": "datapoints/{}".format(topic_suffix)
         }
 
     def _write_conf(self, info):

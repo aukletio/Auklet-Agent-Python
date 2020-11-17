@@ -13,6 +13,7 @@ from auklet.broker import MQTTClient
 from auklet.utils import get_mac, setup_thread_excepthook, create_dir
 from auklet.monitoring.logging import AukletLogging
 from auklet.monitoring.processing import Client
+from auklet.monitoring.utils import update_data_limits
 from auklet.stats import MonitoringTree
 from auklet.errors import AukletConfigurationError
 
@@ -60,7 +61,7 @@ class Monitoring(AukletLogging):
         self.mac_hash = get_mac()
         self.client = Client(api_key, app_id, release, base_url,
                              self.mac_hash, self.version, self.auklet_dir)
-        self.emission_rate = self.client.update_limits()
+        self.emission_rate = update_data_limits(self.client)
         self.tree = MonitoringTree(self.mac_hash)
         self.broker = MQTTClient(self.client)
         self.monitor = monitoring
@@ -107,7 +108,7 @@ class Monitoring(AukletLogging):
             self.tree.clear_root()
             self.samples_taken = 0
         if self.total_samples % self.hour == 0:
-            self.emission_rate = self.client.update_limits()
+            self.emission_rate = update_data_limits(self.client)
             self.client.check_date()
 
     def handle_exc(self, type, value, traceback):
@@ -115,6 +116,11 @@ class Monitoring(AukletLogging):
             self.client.build_msgpack_event_data(
                 type, traceback, self.tree), "event")
         sys.__excepthook__(type, value, traceback)
+
+    def send(self, msg, data_type="motion"):
+        self.broker.produce(
+            self.client.build_msgpack_send_data(msg, data_type), "send"
+        )
 
     def log(self, msg, data_type, level="INFO"):
         self.broker.produce(
