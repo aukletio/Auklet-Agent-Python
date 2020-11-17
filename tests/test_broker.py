@@ -1,5 +1,6 @@
 import os
 import ast
+import json
 import unittest
 
 from mock import patch
@@ -40,6 +41,7 @@ class TestMQTTBroker(unittest.TestCase):
         open(self.client.com_config_filename, "w").close()
 
     def test_get_certs(self):
+        pubnub_cert_filename = ".auklet/pubnub.json"
         with open("key.pem.zip", "wb"):
             pass
         class urlopen:
@@ -47,10 +49,16 @@ class TestMQTTBroker(unittest.TestCase):
             def read():
                 with open("key.pem.zip", "rb") as file:
                     return file.read()
-
+        if os.path.exists(pubnub_cert_filename):
+            os.remove(pubnub_cert_filename)
         self.assertFalse(self.broker._get_certs())
         with patch('auklet.broker.urlopen') as _urlopen:
             _urlopen.return_value = urlopen
+            with open(pubnub_cert_filename, "wb") as f:
+                f.write(
+                    json.dumps(
+                        {"publish_key": "", "subscribe_key": ""},
+                        ensure_ascii=False).encode("gbk"))
             self.assertTrue(self.broker._get_certs())
 
     def test_read_from_conf(self):
