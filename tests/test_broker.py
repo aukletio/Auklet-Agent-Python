@@ -40,6 +40,8 @@ class TestMQTTBroker(unittest.TestCase):
         open(self.client.com_config_filename, "w").close()
 
     def test_get_certs(self):
+        with open("key.pem.zip", "wb"):
+            pass
         class urlopen:
             @staticmethod
             def read():
