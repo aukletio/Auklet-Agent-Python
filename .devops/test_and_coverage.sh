@@ -30,7 +30,7 @@ fi
 
 tox
 
-sudo pip install coverage
+sudo pip install coverage==4.5.1
 
 coverage combine
 coverage report -m
