@@ -177,7 +177,7 @@ class MonitoringTree(object):
         return {}
 
     def build_msgpack_tree(self, client):
-        return msgpack.packb(self.build_tree(client), use_bin_type=False)
+        return self.build_tree(client)
 
 
 class SystemMetrics(object):

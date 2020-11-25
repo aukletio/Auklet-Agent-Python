@@ -1,12 +1,14 @@
 from __future__ import absolute_import
 
 import os
-import ssl
 import json
 import logging
-import paho.mqtt.client as mqtt
 
-from auklet.utils import build_url, create_file, open_auklet_url, u
+from pubnub.pubnub import PubNub
+from pubnub.pnconfiguration import PNConfiguration
+
+from auklet.utils import build_url, create_file, open_auklet_url, \
+    post_auklet_url, u
 
 try:
     # For Python 3.0 and later
@@ -23,26 +25,27 @@ class MQTTClient(object):
     producer = None
     brokers = None
     client = None
-    username = None
-    password = None
     com_config_filename = ".auklet/communication"
-    port = None
     producer_types = {
         "monitoring": "python/profiler/{}/{}",
         "event": "python/events/{}/{}",
         "send": "datapoints/{}/{}"
     }
+    pubnub = None
+    publish_key = None
+    subscribe_key = None
+    topic_suffix = None
 
     def __init__(self, client):
         self.client = client
         self._get_conf()
         self.create_producer()
-        topic_suffix = "{}/{}".format(
+        self.topic_suffix = "{}/{}".format(
             self.client.org_id, self.client.broker_username)
         self.producer_types = {
-            "monitoring": "python/profiler/{}".format(topic_suffix),
-            "event": "python/events/{}".format(topic_suffix),
-            "send": "datapoints/{}".format(topic_suffix)
+            "monitoring": "python.profiler",
+            "event": "python.events",
+            "send": "python.datapoints"
         }
 
     def _write_conf(self, info):
@@ -61,9 +64,10 @@ class MQTTClient(object):
         self._read_from_conf(loaded)
 
     def _get_certs(self):
-        if not os.path.isfile("{}/ca.pem".format(self.client.auklet_dir)):
+        certs_filename = "{}/pubnub.json".format(self.client.auklet_dir)
+        if not os.path.isfile(certs_filename):
             url = Request(
-                build_url(self.client.base_url, "private/devices/certificates/"),
+                build_url(self.client.base_url, "private/devices/certificates/?cert_format=json"),
                 headers={"Authorization": "JWT %s" % self.client.apikey})
             try:
                 try:
@@ -72,12 +76,15 @@ class MQTTClient(object):
                     # Allow for accessing redirect w/o including the
                     # Authorization token.
                     res = urlopen(e.geturl())
-            except URLError:
+            except URLError as e:
                 return False
-            filename = "{}/ca.pem".format(self.client.auklet_dir)
-            create_file(filename)
-            f = open(filename, "wb")
+            create_file(certs_filename)
+            f = open(certs_filename, "wb")
             f.write(res.read())
+        with open(certs_filename) as f:
+            keys = json.loads(f.read())
+            self.publish_key = keys['publish_key']
+            self.subscribe_key = keys['subscribe_key']
         return True
 
     def _read_from_conf(self, data):
@@ -90,24 +97,23 @@ class MQTTClient(object):
 
     def create_producer(self):
         if self._get_certs():
-            self.producer = mqtt.Client(client_id=self.client.client_id,
-                                        protocol=mqtt.MQTTv311,
-                                        transport="ssl",
-                                        clean_session=False)
-            self.producer.username_pw_set(
-                username=self.client.broker_username,
-                password=self.client.broker_password)
-            self.producer.enable_logger()
-            context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
-            context.verify_mode = ssl.CERT_REQUIRED
-            context.load_verify_locations(
-                capath="{}/".format(self.client.auklet_dir))
-            context.options &= ~ssl.OP_NO_SSLv3
-            self.producer.tls_set_context(context)
-            self.producer.on_disconnect = self.on_disconnect
-            self.producer.connect_async(self.brokers, self.port)
-            self.producer.loop_start()
+            pubnub_config = PNConfiguration()
+            pubnub_config.publish_key = self.publish_key
+            pubnub_config.subscribe_key = self.subscribe_key
+            pubnub_config.uuid = self.client.broker_username
+            self.producer = PubNub(pubnub_config)
 
     def produce(self, data, data_type="monitoring"):
-        self.producer.publish(
-            self.producer_types[data_type], payload=data, qos=1)
+        if data_type == "monitoring":
+            return post_auklet_url(
+                build_url(
+                    self.client.base_url,
+                    "private/sampledstacktraces/store/"
+                ),
+                self.client.apikey,
+                data
+            )
+        elif data_type == "event":
+            self.producer.publish().channel(
+                self.producer_types[data_type]).message(data).sync()
+        return True

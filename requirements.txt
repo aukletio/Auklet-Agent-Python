@@ -5,3 +5,4 @@ pidigits==0.5
 mock==2.0.0
 requests==2.20.0
 msgpack==0.5.6
+pubnub>=4.5.3

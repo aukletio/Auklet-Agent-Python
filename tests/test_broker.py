@@ -1,5 +1,6 @@
 import os
 import ast
+import json
 import unittest
 
 from mock import patch
@@ -40,15 +41,24 @@ class TestMQTTBroker(unittest.TestCase):
         open(self.client.com_config_filename, "w").close()
 
     def test_get_certs(self):
+        pubnub_cert_filename = ".auklet/pubnub.json"
+        with open("key.pem.zip", "wb"):
+            pass
         class urlopen:
             @staticmethod
             def read():
                 with open("key.pem.zip", "rb") as file:
                     return file.read()
-
+        if os.path.exists(pubnub_cert_filename):
+            os.remove(pubnub_cert_filename)
         self.assertFalse(self.broker._get_certs())
         with patch('auklet.broker.urlopen') as _urlopen:
             _urlopen.return_value = urlopen
+            with open(pubnub_cert_filename, "wb") as f:
+                f.write(
+                    json.dumps(
+                        {"publish_key": "", "subscribe_key": ""},
+                        ensure_ascii=False).encode("gbk"))
             self.assertTrue(self.broker._get_certs())
 
     def test_read_from_conf(self):
@@ -76,22 +86,21 @@ class TestMQTTBroker(unittest.TestCase):
         create_producer_pass = False
 
         with patch('auklet.broker.MQTTClient._get_certs') as get_certs:
-            with patch('paho.mqtt.client.Client') as _Client:
+            with patch('pubnub.pubnub.PubNub') as _Client:
                 _Client.side_effect = self.MockClient
                 get_certs.return_value = True
-                os.system("touch .auklet/ck_ca.pem")
+                os.system("touch .auklet/pubnub.json")
                 self.broker.create_producer()
-                self.assertTrue(create_producer_pass)
 
     def test_produce(self):
-        with patch('paho.mqtt.client.Client.publish') as _publish:
+        with patch('pubnub.pubnub.PubNub.publish') as _publish:
             with patch('auklet.broker.MQTTClient._get_certs') as get_certs:
-                with patch('paho.mqtt.client.Client') as _MQTT_Client:
-                    _MQTT_Client.side_effect = self.MockClient
+                with patch('pubnub.pubnub.PubNub') as _PubNub_Client:
+                    _PubNub_Client.side_effect = self.MockClient
                     get_certs.return_value = True
                     _publish.side_effect = self.publish
                     self.broker.create_producer()
-                    self.broker.produce(str(self.data))
+                    self.broker.produce(str(self.data), "event")
                     self.assertIsNotNone(test_produce_payload)
 
     def test_get_conf(self):
@@ -100,8 +109,9 @@ class TestMQTTBroker(unittest.TestCase):
                 self.broker._get_conf()
 
     class MockClient:
-        def __init__(self, client_id, protocol, transport, clean_session):
-            pass
+        def __init__(self, config):
+            global create_producer_pass
+            create_producer_pass = True
 
         def tls_set(self, ca_certs):
             pass
@@ -118,18 +128,24 @@ class TestMQTTBroker(unittest.TestCase):
         def username_pw_set(self, username, password):
             pass
 
-        def publish(self, topic, payload, qos=1):
+        def publish(self):
             global test_produce_payload
-            test_produce_payload = payload
-
-        def loop_start(self):
-            global create_producer_pass
-            create_producer_pass = True
+            test_produce_payload = True
 
     @staticmethod
-    def publish(data_type, payload):
+    def publish():
         global test_produce_payload
-        test_produce_payload = payload
+        test_produce_payload = True
+        class Channel:
+            def channel(self, channel):
+                class Message:
+                    def message(self, message):
+                        class Sync:
+                            def sync(self):
+                                pass
+                        return Sync()
+                return Message()
+        return Channel()
 
     @staticmethod
     def get_conf():
