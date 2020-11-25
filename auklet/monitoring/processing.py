@@ -162,13 +162,10 @@ class Client(object):
             self.reset_data = True
 
     def build_msgpack_event_data(self, type, tb, tree):
-        return msgpack.packb(build_event_data(self, type, tb, tree),
-                             use_bin_type=False)
+        return build_event_data(self, type, tb, tree)
 
     def build_msgpack_log_data(self, msg, data_type, level):
-        return msgpack.packb(build_log_data(self, msg, data_type, level),
-                             use_bin_type=False)
+        return build_log_data(self, msg, data_type, level)
 
     def build_msgpack_send_data(self, msg, data_type):
-        return msgpack.packb(build_send_data(self, msg, data_type),
-                             use_bin_type=False)
+        return build_send_data(self, msg, data_type)

@@ -1,6 +1,7 @@
 import os
 import sys
 import uuid
+import json
 import hashlib
 import requests
 import tempfile
@@ -48,7 +49,10 @@ def post_auklet_url(url, apikey, data):
                      "Content-Type": "application/json"})
     except requests.HTTPError:
         return None
-    return res.json()
+    try:
+        return res.json()
+    except json.decoder.JSONDecodeError:
+        return res
 
 
 def create_file(filename):
