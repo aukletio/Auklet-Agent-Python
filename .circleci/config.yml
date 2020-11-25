@@ -21,8 +21,8 @@ jobs:
               name: mqtt
               environment:
                 DOCKER_VERNEMQ_ALLOW_ANONYMOUS: 'on'
-
         steps:
+
             ##
             # SETUP
             ##
@@ -111,9 +111,9 @@ jobs:
                   fi
                   bash .devops/test_and_coverage.sh $CIRCLE_LOCAL_BUILD
             - store_artifacts:
-                 path: ~/app/htmlcov
+                  path: ~/app/htmlcov
             - run:
-                name: Run benchmark tests
+                name: Run Benchmark Tests
                 command: |
                   export PYTHONUNBUFFERED=0
                   mkdir .auklet
