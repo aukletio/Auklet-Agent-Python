@@ -187,14 +187,45 @@ class SystemMetrics(object):
     outbound_network = 0
     prev_inbound = 0
     prev_outbound = 0
+    current_battery_percent = 0.0
+    battery_seconds_left = 0
+    power_plugged_in = None
+    current_cpu_temperature = 0.0
 
     def __init__(self):
         if psutil is not None:
             self.cpu_usage = psutil.cpu_percent(interval=1)
             self.mem_usage = psutil.virtual_memory().percent
 
+            # If no battery is installed or metrics can not be determined None
+            # is returned.
+            # https://psutil.readthedocs.io/en/latest/#psutil.sensors_battery
+            if psutil.sensors_battery() is not None:
+                self.current_battery_percent = psutil.sensors_battery().percent
+                self.power_plugged_in = psutil.sensors_battery().power_plugged
+                # If the battery is plugged in it will return
+                # POWER_TIME_UNLIMITED.  If the battery was just unplugged or
+                # can not receive the information it will return
+                # POWER_TIME_UNKNOWN.
+                battery_seconds_left = psutil.sensors_battery().secsleft
+                if battery_seconds_left in (psutil.POWER_TIME_UNLIMITED,
+                                            psutil.POWER_TIME_UNKNOWN):
+                    self.battery_seconds_left = battery_seconds_left
+                else:
+                    self.battery_seconds_left = battery_seconds_left / 60
+
+            # Certain platforms do not support the sensors_teperatures() module
+            try:
+                self.current_cpu_temperature = psutil.sensors_temperatures()
+            except AttributeError:
+                pass
+
     def __iter__(self):
         yield "cpuUsage", self.cpu_usage
         yield "memoryUsage", self.mem_usage
         yield "inboundNetwork", self.inbound_network
         yield "outboundNetwork", self.outbound_network
+        yield "currentBatteryPercent", self.current_battery_percent
+        yield "batterySecondsLeft", self.battery_seconds_left
+        yield "powerPluggedIn", self.power_plugged_in
+        yield "currentCPUTemperature", self.current_cpu_temperature
